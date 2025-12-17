@@ -1,102 +1,61 @@
 <div class="product-page">
-  <nav class="breadcrumb">
-    <a href="/">Home</a>
-    <span class="separator">/</span>
-    <a href="/catalog">Catalog</a>
-    <span class="separator">/</span>
-    <a href="/catalog/color/{{product.color}}">{{product.color}}</a>
-    <span class="separator">/</span>
-    <span class="current">{{product.name}}</span>
-  </nav>
+  <div class="breadcrumb">
+    <a href="/">Home</a> / 
+    <a href="/catalog">Catalog</a> / 
+    <a href="/catalog/color/{{product.color}}">{{product.color}}</a> / 
+    <span>{{product.name}}</span>
+  </div>
   
   <div class="product-detail">
     <div class="product-gallery">
-      <div class="main-image">
-        {{#if product.imageUrl}}
-          <img src="{{product.imageUrl}}" alt="{{product.name}}" class="product-detail-img">
-        {{else}}
-          <div class="marble-display large" style="background: radial-gradient(circle at 30% 30%, white, {{product.color}});"></div>
-        {{/if}}
-      </div>
+      {{#if product.imageUrl}}
+      <img src="{{product.imageUrl}}" alt="{{product.name}}" class="product-main-image">
+      {{else}}
+      <div class="product-placeholder large" style="background-color: {{product.color}};"></div>
+      {{/if}}
     </div>
     
     <div class="product-info-panel">
-      <span class="product-color-badge large" style="background-color: {{product.color}};">{{product.color}}</span>
-      <h1 class="product-title">{{product.name}}</h1>
+      <span class="color-badge" style="background-color: {{product.color}};">{{product.color}}</span>
+      <h1>{{product.name}}</h1>
       <p class="product-price-large">{{product.price}} Dh</p>
       
-      <div class="product-description-full">
+      {{#if product.description}}
+      <div class="product-description">
         <p>{{product.description}}</p>
       </div>
+      {{/if}}
       
-      <div class="product-meta">
-        <div class="meta-item">
-          <span class="meta-label">Availability:</span>
-          {{#if product.inStock}}
-            <span class="in-stock">In Stock ({{product.stockCount}} available)</span>
-          {{else}}
-            <span class="out-of-stock">Out of Stock</span>
-          {{/if}}
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Color:</span>
-          <span class="color-value" style="display: inline-flex; align-items: center; gap: 8px;">
-            <span class="color-swatch small" style="background-color: {{product.color}};"></span>
-            {{product.color}}
-          </span>
-        </div>
-      </div>
-      
-      <div class="product-features">
-        <div class="feature-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-          <span>Free shipping on orders over 500 Dh</span>
-        </div>
-        <div class="feature-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
-          <span>Secure packaging guaranteed</span>
-        </div>
-        <div class="feature-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="1 4 1 10 7 10"/>
-            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-          </svg>
-          <span>30-day return policy</span>
-        </div>
+      <div class="product-stock">
+        {{#if product.inStock}}
+        <span class="stock-status in-stock">✓ In Stock ({{product.stockCount}} available)</span>
+        {{else}}
+        <span class="stock-status out-of-stock">✗ Out of Stock</span>
+        {{/if}}
       </div>
     </div>
   </div>
   
-  {{#if hasRelated}}
-  <section class="related-products">
-    <h2>You Might Also Like</h2>
+  {{#if relatedProducts.length}}
+  <div class="related-products">
+    <h2>Related Products</h2>
     <div class="products-grid">
       {{#each relatedProducts}}
-      <article class="product-card">
-        <a href="/catalog/{{this._id}}" class="product-link">
-          <div class="product-image">
-            {{#if this.imageUrl}}
-              <img src="{{this.imageUrl}}" alt="{{this.name}}" class="product-img">
-            {{else}}
-              <div class="marble-display" style="background: radial-gradient(circle at 30% 30%, white, {{this.color}});"></div>
-            {{/if}}
-          </div>
-          <div class="product-info">
-            <span class="product-color-badge" style="background-color: {{this.color}};">{{this.color}}</span>
-            <h3 class="product-name">{{this.name}}</h3>
-            <div class="product-footer">
-              <span class="product-price">{{this.price}} Dh</span>
-            </div>
-          </div>
-        </a>
-      </article>
+      <a href="/catalog/{{this._id}}" class="product-card">
+        <div class="product-image-container">
+          {{#if this.imageUrl}}
+          <img src="{{this.imageUrl}}" alt="{{this.name}}" class="product-image">
+          {{else}}
+          <div class="product-placeholder" style="background-color: {{this.color}};"></div>
+          {{/if}}
+        </div>
+        <div class="product-info">
+          <h3 class="product-name">{{this.name}}</h3>
+          <span class="product-price">{{this.price}} Dh</span>
+        </div>
+      </a>
       {{/each}}
     </div>
-  </section>
+  </div>
   {{/if}}
 </div>
-

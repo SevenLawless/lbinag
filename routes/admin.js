@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Product from '../models/Product.js';
 
@@ -10,18 +11,24 @@ const router = Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Colors available for products
+// Ensure uploads directory exists
+const uploadsDir = path.resolve(__dirname, '../public/uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Available colors
 const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'white', 'black', 'multicolor'];
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../public/uploads'));
+    cb(null, uploadsDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'marble-' + uniqueSuffix + ext);
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, 'product-' + uniqueSuffix + ext);
   }
 });
 
@@ -35,30 +42,30 @@ const upload = multer({
     if (extname && mimetype) {
       return cb(null, true);
     }
-    cb(new Error('Only image files are allowed!'));
+    cb(new Error('Only image files (JPEG, PNG, GIF, WebP) are allowed'));
   }
 });
 
 /**
  * GET /admin/products
- * List all products with edit/delete actions
+ * List all products
  */
 router.get('/products', async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
     
     res.render('admin/products', {
-      title: 'Manage Products - Lbinag Admin',
+      title: 'Admin - Products',
       products,
-      productCount: products.length,
       success: req.query.success,
       error: req.query.error
     });
   } catch (error) {
     console.error('[Admin] Error loading products:', error);
-    res.render('error', {
-      title: 'Error',
-      message: 'Failed to load products'
+    res.render('admin/products', {
+      title: 'Admin - Products',
+      products: [],
+      error: 'Failed to load products: ' + error.message
     });
   }
 });
@@ -69,66 +76,56 @@ router.get('/products', async (req, res) => {
  */
 router.get('/products/new', (req, res) => {
   res.render('admin/product-form', {
-    title: 'Add New Product - Lbinag Admin',
+    title: 'Admin - New Product',
     colors: COLORS,
     product: null,
-    isEdit: false
+    isEdit: false,
+    error: req.query.error
   });
 });
 
 /**
  * POST /admin/products/new
- * Create new product with image upload
+ * Create new product
  */
 router.post('/products/new', upload.single('image'), async (req, res) => {
   try {
     const { name, description, price, color, stockCount } = req.body;
     
-    // Validate required fields
-    if (!name || !description || !price || !color) {
-      return res.render('admin/product-form', {
-        title: 'Add New Product - Lbinag Admin',
-        colors: COLORS,
-        product: req.body,
-        isEdit: false,
-        error: 'Please fill in all required fields'
-      });
+    // Validation
+    if (!name || !name.trim()) {
+      return res.redirect('/admin/products/new?error=Product name is required');
+    }
+    if (!price || isNaN(parseFloat(price))) {
+      return res.redirect('/admin/products/new?error=Valid price is required');
+    }
+    if (!color) {
+      return res.redirect('/admin/products/new?error=Color is required');
     }
     
-    // Determine image URL
-    let imageUrl = '/logo.png'; // Default
+    // Handle image
+    let imageUrl = '';
     if (req.file) {
       imageUrl = '/uploads/' + req.file.filename;
+      console.log('[Admin] Image uploaded:', imageUrl);
     }
-    
-    // Parse stock count and determine inStock status
-    const parsedStockCount = parseInt(stockCount) || 0;
-    const isInStock = parsedStockCount > 0;
     
     const product = new Product({
       name: name.trim(),
-      description: description.trim(),
+      description: description ? description.trim() : '',
       price: parseFloat(price),
-      color,
-      imageUrl,
-      stockCount: parsedStockCount,
-      inStock: isInStock
+      color: color,
+      stockCount: parseInt(stockCount) || 100,
+      imageUrl: imageUrl
     });
     
     await product.save();
-    
-    console.log(`[Admin] Created product: ${product.name} (inStock: ${isInStock}, stock: ${parsedStockCount})`);
+    console.log('[Admin] Product created:', product.name, 'ID:', product._id);
     
     res.redirect('/admin/products?success=Product created successfully');
   } catch (error) {
     console.error('[Admin] Error creating product:', error);
-    res.render('admin/product-form', {
-      title: 'Add New Product - Lbinag Admin',
-      colors: COLORS,
-      product: req.body,
-      isEdit: false,
-      error: 'Failed to create product: ' + error.message
-    });
+    res.redirect('/admin/products/new?error=' + encodeURIComponent(error.message));
   }
 });
 
@@ -145,65 +142,60 @@ router.get('/products/:id/edit', async (req, res) => {
     }
     
     res.render('admin/product-form', {
-      title: `Edit ${product.name} - Lbinag Admin`,
+      title: 'Admin - Edit Product',
       colors: COLORS,
-      product,
-      isEdit: true
+      product: product,
+      isEdit: true,
+      error: req.query.error
     });
   } catch (error) {
     console.error('[Admin] Error loading product:', error);
-    res.redirect('/admin/products?error=Failed to load product');
+    res.redirect('/admin/products?error=' + encodeURIComponent(error.message));
   }
 });
 
 /**
  * POST /admin/products/:id/edit
- * Update product with optional new image
+ * Update product
  */
 router.post('/products/:id/edit', upload.single('image'), async (req, res) => {
   try {
     const { name, description, price, color, stockCount } = req.body;
+    const productId = req.params.id;
     
-    const product = await Product.findById(req.params.id);
-    
+    const product = await Product.findById(productId);
     if (!product) {
       return res.redirect('/admin/products?error=Product not found');
     }
     
-    // Validate required fields
-    if (!name || !description || !price || !color) {
-      return res.render('admin/product-form', {
-        title: `Edit ${product.name} - Lbinag Admin`,
-        colors: COLORS,
-        product: { ...product.toObject(), ...req.body },
-        isEdit: true,
-        error: 'Please fill in all required fields'
-      });
+    // Validation
+    if (!name || !name.trim()) {
+      return res.redirect(`/admin/products/${productId}/edit?error=Product name is required`);
+    }
+    if (!price || isNaN(parseFloat(price))) {
+      return res.redirect(`/admin/products/${productId}/edit?error=Valid price is required`);
     }
     
+    // Update fields
     product.name = name.trim();
-    product.description = description.trim();
+    product.description = description ? description.trim() : '';
     product.price = parseFloat(price);
-    product.color = color;
-    
-    // Parse stock count and determine inStock status
-    const parsedStockCount = parseInt(stockCount) || 0;
-    product.stockCount = parsedStockCount;
-    product.inStock = parsedStockCount > 0;
+    product.color = color || product.color;
+    product.stockCount = parseInt(stockCount) || 0;
     
     // Update image if new one uploaded
     if (req.file) {
       product.imageUrl = '/uploads/' + req.file.filename;
+      console.log('[Admin] New image uploaded:', product.imageUrl);
     }
     
     await product.save();
-    
-    console.log(`[Admin] Updated product: ${product.name} (inStock: ${product.inStock}, stock: ${product.stockCount})`);
+    console.log('[Admin] Product updated:', product.name);
     
     res.redirect('/admin/products?success=Product updated successfully');
   } catch (error) {
     console.error('[Admin] Error updating product:', error);
-    res.redirect(`/admin/products/${req.params.id}/edit?error=Failed to update product`);
+    res.redirect(`/admin/products/${req.params.id}/edit?error=` + encodeURIComponent(error.message));
   }
 });
 
@@ -219,29 +211,11 @@ router.post('/products/:id/delete', async (req, res) => {
       return res.redirect('/admin/products?error=Product not found');
     }
     
-    console.log(`[Admin] Deleted product: ${product.name}`);
-    
+    console.log('[Admin] Product deleted:', product.name);
     res.redirect('/admin/products?success=Product deleted successfully');
   } catch (error) {
     console.error('[Admin] Error deleting product:', error);
-    res.redirect('/admin/products?error=Failed to delete product');
-  }
-});
-
-/**
- * POST /admin/products/delete-all
- * Delete all products
- */
-router.post('/products/delete-all', async (req, res) => {
-  try {
-    const result = await Product.deleteMany({});
-    
-    console.log(`[Admin] Deleted all products (${result.deletedCount} items)`);
-    
-    res.redirect('/admin/products?success=All products deleted');
-  } catch (error) {
-    console.error('[Admin] Error deleting all products:', error);
-    res.redirect('/admin/products?error=Failed to delete products');
+    res.redirect('/admin/products?error=' + encodeURIComponent(error.message));
   }
 });
 

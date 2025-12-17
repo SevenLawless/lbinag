@@ -8,7 +8,7 @@ const productSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: true
+    default: ''
   },
   price: {
     type: Number,
@@ -17,20 +17,18 @@ const productSchema = new mongoose.Schema({
   },
   imageUrl: {
     type: String,
-    default: '/logo.png'
+    default: ''
   },
   color: {
     type: String,
     required: true,
-    enum: ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'white', 'black', 'multicolor']
-  },
-  inStock: {
-    type: Boolean,
-    default: true
+    enum: ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'white', 'black', 'multicolor'],
+    default: 'multicolor'
   },
   stockCount: {
     type: Number,
-    default: 100
+    default: 100,
+    min: 0
   },
   createdAt: {
     type: Date,
@@ -38,14 +36,22 @@ const productSchema = new mongoose.Schema({
   }
 });
 
-// Text index for search functionality
-productSchema.index({ name: 'text', description: 'text', color: 'text' });
+// Virtual for inStock status
+productSchema.virtual('inStock').get(function() {
+  return this.stockCount > 0;
+});
+
+// Ensure virtuals are included in JSON
+productSchema.set('toJSON', { virtuals: true });
+productSchema.set('toObject', { virtuals: true });
+
+// Text index for search
+productSchema.index({ name: 'text', description: 'text' });
 
 // Static method to search products
 productSchema.statics.search = async function(query, colorFilter) {
   let filter = {};
   
-  // Add color filter if specified
   if (colorFilter && colorFilter !== 'all') {
     filter.color = colorFilter;
   }
@@ -54,25 +60,12 @@ productSchema.statics.search = async function(query, colorFilter) {
     return this.find(filter).sort({ createdAt: -1 });
   }
   
-  // Try text search first
-  const textFilter = { ...filter, $text: { $search: query } };
-  const textResults = await this.find(
-    textFilter,
-    { score: { $meta: 'textScore' } }
-  ).sort({ score: { $meta: 'textScore' } });
-  
-  if (textResults.length > 0) {
-    return textResults;
-  }
-  
-  // Fallback to regex search if no text results
   const regex = new RegExp(query, 'i');
   return this.find({
     ...filter,
     $or: [
       { name: regex },
-      { description: regex },
-      { color: regex }
+      { description: regex }
     ]
   }).sort({ createdAt: -1 });
 };

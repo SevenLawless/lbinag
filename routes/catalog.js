@@ -9,34 +9,34 @@ const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'w
 /**
  * GET /catalog
  * Display product catalog with optional search and color filter
- * Search uses query params: /catalog?q=blue&color=red
  */
 router.get('/', async (req, res) => {
   try {
     const searchQuery = req.query.q || '';
     const selectedColor = req.query.color || '';
     
-    console.log(`[Catalog] Searching for: "${searchQuery || 'all products'}", color: "${selectedColor || 'all'}"`);
+    console.log('[Catalog] Search:', searchQuery || 'none', '| Color:', selectedColor || 'all');
     
-    // Use the Product.search static method
     const products = await Product.search(searchQuery, selectedColor);
     
     res.render('catalog', {
-      title: searchQuery ? `Search: ${searchQuery} - Lbinag` : 'Catalog - Lbinag',
+      title: searchQuery ? `Search: ${searchQuery}` : 'Catalog',
       products,
       searchQuery,
       selectedColor,
       colors: COLORS,
-      resultCount: products.length,
-      hasResults: products.length > 0
+      resultCount: products.length
     });
-    
   } catch (error) {
     console.error('[Catalog] Error:', error);
-    res.render('error', {
-      title: 'Error - Lbinag',
-      message: 'Failed to load catalog',
-      error: process.env.NODE_ENV === 'development' ? error.message : null
+    res.render('catalog', {
+      title: 'Catalog',
+      products: [],
+      searchQuery: '',
+      selectedColor: '',
+      colors: COLORS,
+      resultCount: 0,
+      error: 'Failed to load products'
     });
   }
 });
@@ -47,28 +47,21 @@ router.get('/', async (req, res) => {
  */
 router.get('/color/:color', async (req, res) => {
   try {
-    const { color } = req.params;
+    const color = req.params.color.toLowerCase();
     
-    const products = await Product.find({ 
-      color: color.toLowerCase()
-    }).sort({ createdAt: -1 });
+    const products = await Product.find({ color }).sort({ createdAt: -1 });
     
     res.render('catalog', {
-      title: `${color.charAt(0).toUpperCase() + color.slice(1)} Marbles - Lbinag`,
+      title: `${color.charAt(0).toUpperCase() + color.slice(1)} Marbles`,
       products,
       searchQuery: '',
       selectedColor: color,
       colors: COLORS,
-      resultCount: products.length,
-      hasResults: products.length > 0
+      resultCount: products.length
     });
-    
   } catch (error) {
-    console.error('[Catalog] Color error:', error);
-    res.render('error', {
-      title: 'Error - Lbinag',
-      message: 'Failed to load color filter'
-    });
+    console.error('[Catalog] Color filter error:', error);
+    res.redirect('/catalog?error=Failed to load products');
   }
 });
 
@@ -82,7 +75,7 @@ router.get('/:id', async (req, res) => {
     
     if (!product) {
       return res.status(404).render('error', {
-        title: 'Not Found - Lbinag',
+        title: 'Not Found',
         message: 'Product not found'
       });
     }
@@ -94,25 +87,22 @@ router.get('/:id', async (req, res) => {
     }).limit(4);
     
     res.render('product', {
-      title: `${product.name} - Lbinag`,
+      title: product.name,
       product,
-      relatedProducts,
-      hasRelated: relatedProducts.length > 0
+      relatedProducts
     });
-    
   } catch (error) {
     console.error('[Catalog] Product error:', error);
     
-    // Handle invalid ObjectId
     if (error.name === 'CastError') {
       return res.status(404).render('error', {
-        title: 'Not Found - Lbinag',
+        title: 'Not Found',
         message: 'Product not found'
       });
     }
     
     res.render('error', {
-      title: 'Error - Lbinag',
+      title: 'Error',
       message: 'Failed to load product'
     });
   }
