@@ -1,0 +1,76 @@
+<div class="catalog-page">
+  <div class="catalog-header">
+    <h1>
+      {{#if searchQuery}}
+        Search Results for "{{searchQuery}}"
+      {{else if selectedColor}}
+        {{selectedColor}} Marbles
+      {{else}}
+        All Marbles
+      {{/if}}
+    </h1>
+    <p class="result-count">{{resultCount}} products found</p>
+  </div>
+  
+  <div class="catalog-layout">
+    <aside class="catalog-sidebar">
+      <div class="filter-section">
+        <h3>Filter by Color</h3>
+        <ul class="color-list">
+          <li>
+            <a href="/catalog" class="color-filter-link {{#unless selectedColor}}active{{/unless}}">
+              <span class="color-swatch all-colors"></span>
+              All Colors
+            </a>
+          </li>
+          {{#each colors}}
+          <li>
+            <a href="/catalog/color/{{this}}" class="color-filter-link {{#if (eq this ../selectedColor)}}active{{/if}}">
+              <span class="color-swatch" style="background-color: {{this}};"></span>
+              {{this}}
+            </a>
+          </li>
+          {{/each}}
+        </ul>
+      </div>
+    </aside>
+    
+    <div class="catalog-main">
+      {{#if hasResults}}
+        <div class="products-grid">
+          {{#each products}}
+          <article class="product-card">
+            <a href="/catalog/{{this._id}}" class="product-link">
+              <div class="product-image">
+                {{#if this.imageUrl}}
+                  <img src="{{this.imageUrl}}" alt="{{this.name}}" class="product-img">
+                {{else}}
+                  <div class="marble-display" style="background: radial-gradient(circle at 30% 30%, white, {{this.color}});"></div>
+                {{/if}}
+              </div>
+              <div class="product-info">
+                <span class="product-color-badge" style="background-color: {{this.color}};">{{this.color}}</span>
+                <h3 class="product-name">{{this.name}}</h3>
+                <p class="product-description">{{this.description}}</p>
+                <div class="product-footer">
+                  <span class="product-price">{{this.price}} Dh</span>
+                  {{#unless this.inStock}}
+                  <span class="out-of-stock-badge">Out of Stock</span>
+                  {{/unless}}
+                </div>
+              </div>
+            </a>
+          </article>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="no-results">
+          <div class="no-results-icon">🔍</div>
+          <h2>No marbles found</h2>
+          <p>Try adjusting your search or browse all our marbles</p>
+          <a href="/catalog" class="btn btn-primary">View All Marbles</a>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</div>

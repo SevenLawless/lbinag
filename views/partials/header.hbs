@@ -1,0 +1,41 @@
+<header class="site-header">
+  <div class="header-container">
+    <a href="/" class="logo-link">
+      <img src="/logo.png" alt="Lbinag" class="logo">
+      <div class="brand">
+        <span class="brand-name">Lbinag</span>
+        <span class="brand-tagline">Nano Banana</span>
+      </div>
+    </a>
+    
+    <form action="/catalog" method="GET" class="navbar-search">
+      <input 
+        type="text" 
+        name="q" 
+        placeholder="Search marbles..."
+        class="navbar-search-input"
+      >
+      <button type="submit" class="navbar-search-btn" aria-label="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </form>
+    
+    <nav class="main-nav">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/catalog" class="nav-link">Catalog</a>
+      <a href="/admin/products" class="nav-link">Admin</a>
+    </nav>
+    
+    <div class="auth-section">
+      {{#if isAuthenticated}}
+        <span class="user-email">{{userEmail}}</span>
+        <a href="/auth/logout" class="btn btn-outline btn-sm">Sign Out</a>
+      {{else}}
+        <a href="/auth/login" class="btn btn-primary btn-sm">Sign In</a>
+      {{/if}}
+    </div>
+  </div>
+</header>

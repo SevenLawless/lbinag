@@ -1,0 +1,96 @@
+<div class="admin-page">
+  <div class="admin-header">
+    <h1>Manage Products</h1>
+    <div class="admin-actions">
+      <a href="/admin/products/new" class="btn btn-primary">+ Add New Product</a>
+    </div>
+  </div>
+  
+  {{#if success}}
+  <div class="alert alert-success">
+    {{success}}
+  </div>
+  {{/if}}
+  
+  {{#if error}}
+  <div class="alert alert-error">
+    {{error}}
+  </div>
+  {{/if}}
+  
+  <div class="admin-stats">
+    <div class="stat-card">
+      <span class="stat-value">{{productCount}}</span>
+      <span class="stat-label">Total Products</span>
+    </div>
+  </div>
+  
+  {{#if products.length}}
+  <div class="admin-table-container">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Color</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each products}}
+        <tr>
+          <td class="product-cell">
+            <div class="product-info-row">
+              {{#if this.imageUrl}}
+                <img src="{{this.imageUrl}}" alt="{{this.name}}" class="admin-product-thumb">
+              {{else}}
+                <div class="marble-display small" style="background: radial-gradient(circle at 30% 30%, white, {{this.color}});"></div>
+              {{/if}}
+              <div>
+                <strong>{{this.name}}</strong>
+                <p class="product-desc-preview">{{this.description}}</p>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="color-badge" style="background-color: {{this.color}}; color: {{#if (eq this.color 'white')}}#333{{else if (eq this.color 'yellow')}}#333{{else}}white{{/if}};">
+              {{this.color}}
+            </span>
+          </td>
+          <td class="price-cell">{{this.price}} Dh</td>
+          <td>{{this.stockCount}}</td>
+          <td>
+            {{#if this.inStock}}
+            <span class="status-badge in-stock">In Stock</span>
+            {{else}}
+            <span class="status-badge out-of-stock">Out of Stock</span>
+            {{/if}}
+          </td>
+          <td class="actions-cell">
+            <a href="/admin/products/{{this._id}}/edit" class="btn btn-sm btn-outline">Edit</a>
+            <form action="/admin/products/{{this._id}}/delete" method="POST" class="inline-form" onsubmit="return confirm('Delete this product?')">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="admin-footer-actions">
+    <form action="/admin/products/delete-all" method="POST" onsubmit="return confirm('Are you sure you want to delete ALL products? This cannot be undone!')">
+      <button type="submit" class="btn btn-danger">Delete All Products</button>
+    </form>
+  </div>
+  {{else}}
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <h2>No products yet</h2>
+    <p>Start by adding your first product</p>
+    <a href="/admin/products/new" class="btn btn-primary btn-lg">+ Add First Product</a>
+  </div>
+  {{/if}}
+</div>
