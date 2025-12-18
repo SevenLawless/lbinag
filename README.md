@@ -1,4 +1,4 @@
-# Lbinag - Nano Banana Marbles
+# Lbinag Marbles
 
 A server-side rendered e-commerce application for selling marbles, built with Express.js, Handlebars, and MongoDB.
 
