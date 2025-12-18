@@ -30,25 +30,26 @@ const productSchema = new mongoose.Schema({
     default: 100,
     min: 0
   },
+  inStock: {
+    type: Boolean,
+    default: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
 
-// Virtual for inStock status
-productSchema.virtual('inStock').get(function() {
-  return this.stockCount > 0;
-});
-
-// Ensure virtuals are included in JSON
-productSchema.set('toJSON', { virtuals: true });
-productSchema.set('toObject', { virtuals: true });
-
 // Text index for search
 productSchema.index({ name: 'text', description: 'text' });
 
-// Static method to search products
+// Pre-save middleware to sync inStock with stockCount
+productSchema.pre('save', function(next) {
+  this.inStock = this.stockCount > 0;
+  next();
+});
+
+// Static method to search products - returns plain objects for Handlebars
 productSchema.statics.search = async function(query, colorFilter) {
   let filter = {};
   
@@ -56,18 +57,29 @@ productSchema.statics.search = async function(query, colorFilter) {
     filter.color = colorFilter;
   }
   
+  let products;
+  
   if (!query || query.trim() === '') {
-    return this.find(filter).sort({ createdAt: -1 });
+    products = await this.find(filter).sort({ createdAt: -1 }).lean();
+  } else {
+    const regex = new RegExp(query, 'i');
+    products = await this.find({
+      ...filter,
+      $or: [
+        { name: regex },
+        { description: regex }
+      ]
+    }).sort({ createdAt: -1 }).lean();
   }
   
-  const regex = new RegExp(query, 'i');
-  return this.find({
-    ...filter,
-    $or: [
-      { name: regex },
-      { description: regex }
-    ]
-  }).sort({ createdAt: -1 });
+  // Add computed inStock for plain objects
+  products = products.map(p => ({
+    ...p,
+    inStock: p.stockCount > 0
+  }));
+  
+  console.log('[Product.search] Found', products.length, 'products');
+  return products;
 };
 
 const Product = mongoose.model('Product', productSchema);

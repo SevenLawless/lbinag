@@ -1,5 +1,5 @@
 /**
- * Lbinag - Nano Banana Marble E-Commerce
+ * Lbinag Marble E-Commerce
  * Main Server Entry Point
  * 
  * This is a server-side rendered Express application selling marbles.
@@ -130,7 +130,7 @@ app.use((req, res, next) => {
 // Home page
 app.get('/', (req, res) => {
   res.render('home', {
-    title: 'Lbinag - Nano Banana Marbles'
+    title: 'Lbinag Marbles'
   });
 });
 
@@ -174,7 +174,7 @@ app.use((err, req, res, next) => {
 // ==========================================
 app.listen(PORT, () => {
   console.log('==========================================');
-  console.log('  LBINAG - NANO BANANA MARBLES');
+  console.log('  LBINAG MARBLES');
   console.log('==========================================');
   console.log(`[Server] Running on http://localhost:${PORT}`);
   console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);

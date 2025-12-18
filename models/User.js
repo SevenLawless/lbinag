@@ -14,8 +14,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Index for fast email lookups
-userSchema.index({ email: 1 });
+// Note: email already has unique: true which creates an index
 
 const User = mongoose.model('User', userSchema);
 

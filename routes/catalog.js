@@ -19,6 +19,8 @@ router.get('/', async (req, res) => {
     
     const products = await Product.search(searchQuery, selectedColor);
     
+    console.log('[Catalog] Rendering with', products.length, 'products');
+    
     res.render('catalog', {
       title: searchQuery ? `Search: ${searchQuery}` : 'Catalog',
       products,
@@ -49,7 +51,14 @@ router.get('/color/:color', async (req, res) => {
   try {
     const color = req.params.color.toLowerCase();
     
-    const products = await Product.find({ color }).sort({ createdAt: -1 });
+    // Use .lean() to get plain objects for Handlebars
+    let products = await Product.find({ color }).sort({ createdAt: -1 }).lean();
+    
+    // Add computed inStock
+    products = products.map(p => ({
+      ...p,
+      inStock: p.stockCount > 0
+    }));
     
     res.render('catalog', {
       title: `${color.charAt(0).toUpperCase() + color.slice(1)} Marbles`,
@@ -71,7 +80,8 @@ router.get('/color/:color', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    // Use .lean() to get plain object for Handlebars
+    let product = await Product.findById(req.params.id).lean();
     
     if (!product) {
       return res.status(404).render('error', {
@@ -80,11 +90,19 @@ router.get('/:id', async (req, res) => {
       });
     }
     
+    // Add computed inStock
+    product.inStock = product.stockCount > 0;
+    
     // Get related products (same color, excluding current)
-    const relatedProducts = await Product.find({
+    let relatedProducts = await Product.find({
       color: product.color,
       _id: { $ne: product._id }
-    }).limit(4);
+    }).limit(4).lean();
+    
+    relatedProducts = relatedProducts.map(p => ({
+      ...p,
+      inStock: p.stockCount > 0
+    }));
     
     res.render('product', {
       title: product.name,

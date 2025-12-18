@@ -52,7 +52,14 @@ const upload = multer({
  */
 router.get('/products', async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    // Use .lean() to get plain objects for Handlebars
+    let products = await Product.find().sort({ createdAt: -1 }).lean();
+    
+    // Add computed inStock
+    products = products.map(p => ({
+      ...p,
+      inStock: p.stockCount > 0
+    }));
     
     res.render('admin/products', {
       title: 'Admin - Products',
@@ -135,7 +142,8 @@ router.post('/products/new', upload.single('image'), async (req, res) => {
  */
 router.get('/products/:id/edit', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    // Use .lean() to get plain object for Handlebars
+    const product = await Product.findById(req.params.id).lean();
     
     if (!product) {
       return res.redirect('/admin/products?error=Product not found');

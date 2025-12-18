@@ -100,7 +100,7 @@ Happy marble shopping!
   <div class="container">
     <div class="header">
       <h1>🔮 Lbinag</h1>
-      <p>Nano Banana Marbles</p>
+      <p>Lbinag Marbles</p>
     </div>
     <div class="content">
       <h2>Welcome!</h2>

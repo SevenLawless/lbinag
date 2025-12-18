@@ -29,8 +29,7 @@ const magicLinkSchema = new mongoose.Schema({
 // TTL index - automatically delete expired tokens after 1 hour past expiry
 magicLinkSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 3600 });
 
-// Index for fast token lookups
-magicLinkSchema.index({ token: 1 });
+// Note: token already has unique: true which creates an index
 
 const MagicLink = mongoose.model('MagicLink', magicLinkSchema);
 

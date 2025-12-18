@@ -18,9 +18,9 @@ const messageSchema = new mongoose.Schema({
 
 const conversationSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,  // String to support both ObjectId strings and guest IDs like "guest_123..."
+    required: true,
+    index: true
   },
   messages: [messageSchema],
   createdAt: {
@@ -38,9 +38,6 @@ conversationSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();
 });
-
-// Index for fast user lookups
-conversationSchema.index({ userId: 1 });
 
 // Static method to get or create conversation for a user
 conversationSchema.statics.getOrCreate = async function(userId) {
